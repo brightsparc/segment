@@ -89,8 +89,8 @@ It is recommended to implement a queue as per the `Delivery` process, the `Forwa
 
 ### Background process
 
-* The segment `Run` method processes the destinations on seperate go routines, and blocks until the context is done.
-* The firehose `Delivery` process batches up to 500 messages, sending them at least every 30 seconds to by default.
+* The segment `Run` method processes destinations on seperate go routines, blocking until the context is done.
+* The firehose `Delivery` process batches up to 500 messages, sending them at every 30 seconds by default.
 
 ### Logging
 
