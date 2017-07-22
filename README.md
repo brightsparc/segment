@@ -21,7 +21,7 @@ These instructions will get you a copy of the project up and running on your loc
 
 ### Prerequisites
 
-This library uses the [gorilla mux](https://github.com/gorilla/mux) library for attaching http handlers, and prometheus for returning
+This library uses the [gorilla mux](https://github.com/gorilla/mux) library for attaching http handlers, and prometheus for monitoring.
 
 ```
 go get -u github.com/gorilla/mux
