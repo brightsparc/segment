@@ -30,10 +30,10 @@ go get -u github.com/prometheus/client_golang
 
 ### Installing
 
-This library
+This library is installed as package `segment`.
 
 ```
-go get brightsparc/segment
+go get -u  github.com/brightsparc/segment
 ```
 
 ## Examples
