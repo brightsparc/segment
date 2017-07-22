@@ -39,9 +39,7 @@ go get -u  github.com/brightsparc/segment
 
 ## Examples
 
-Create a new Segment listener by providing a function to return projectId from writeKey.  
-For unknown writeKey values, return empty string to have endpoint return 400 back request.
-Configure one or more destinations, this example includes forwarded to segment cloud, and firehose stream.
+Create a new Segment listener by providing a function to return projectId from writeKey.  For unknown writeKey values, return empty string to have endpoint return 400 back request. Configure one or more destinations, this example includes forwarded to segment cloud, and firehose stream.
 
 ```go
 package main
@@ -84,8 +82,7 @@ func main() {
 
 ### Send messages
 
-The segment `Send` method will execute `Send` method on each destination in order, and return on error.  
-It is recommended to implement a queue as per the `Delivery` process, the `Forwarder` should only be used for testing.
+The segment `Send` method will execute `Send` method on each destination in order, and return on error.  It is recommended to implement a queue as per the `Delivery` process, the `Forwarder` should only be used for testing.
 
 ### Background process
 
