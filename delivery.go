@@ -63,7 +63,7 @@ type DeliveryConfig struct {
 	FlushInterval  time.Duration `json:"flushInterval,omitempty"`
 }
 
-type delivery struct {
+type Delivery struct {
 	Logger        *log.Logger // Public logger that caller can override
 	fh            *firehose.Firehose
 	streamName    string
@@ -73,7 +73,7 @@ type delivery struct {
 }
 
 // NewDelivery creates a new delivery stream given configuration
-func NewDelivery(config *DeliveryConfig) Destination {
+func NewDelivery(config *DeliveryConfig) *Delivery {
 	if config.StreamRegion == "" || config.StreamName == "" {
 		log.Fatal("Require stream region and name")
 	}
@@ -90,7 +90,7 @@ func NewDelivery(config *DeliveryConfig) Destination {
 		cfg.WithEndpoint(config.StreamEndpoint)
 	}
 	sess := session.Must(session.NewSession(cfg))
-	d := &delivery{
+	d := &Delivery{
 		Logger:        log.New(os.Stderr, "", log.LstdFlags),
 		fh:            firehose.New(sess, cfg),
 		streamName:    config.StreamName,
@@ -102,7 +102,7 @@ func NewDelivery(config *DeliveryConfig) Destination {
 }
 
 // Process is a blocking call
-func (d *delivery) Process(ctx context.Context) error {
+func (d *Delivery) Process(ctx context.Context) error {
 	log.Printf("Delivery connecting to %s...", d.fh.Endpoint)
 
 	// Check the stream exists
@@ -179,7 +179,7 @@ func (d *delivery) Process(ctx context.Context) error {
 	}
 }
 
-func (d *delivery) Send(ctx context.Context, message interface{}) error {
+func (d *Delivery) Send(ctx context.Context, message interface{}) error {
 	if d.messages == nil {
 		return fmt.Errorf("Delivery destination not ready, check stream %q exists at %s", d.streamName, d.fh.Endpoint)
 	}
