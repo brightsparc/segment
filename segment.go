@@ -26,10 +26,8 @@ type Segment struct {
 	destinations []Destination
 }
 
-// TODO: Pass in an array of destinations
-
 // NewSegment create new segment handler given project and delivery config
-func NewSegment(projectId func(writeKey string) string, destinations []Destination, router *mux.Router) *Segment {
+func NewSegment(projectId ProjectId, destinations []Destination, router *mux.Router) *Segment {
 	s := &Segment{
 		Logger:       log.New(os.Stderr, "", log.LstdFlags),
 		projectId:    projectId,
@@ -37,43 +35,12 @@ func NewSegment(projectId func(writeKey string) string, destinations []Destinati
 	}
 
 	s.Logger.Println("Adding Segment handlers")
-	router.HandleFunc("/batch", prometheus.InstrumentHandlerFunc("batch", s.handleBatch)).Methods("POST")
-	router.HandleFunc("/{event:p|page|i|identify|t|track}", prometheus.InstrumentHandlerFunc("event", s.handleEvent))
+	router.HandleFunc("/batch",
+		prometheus.InstrumentHandlerFunc("batch", s.handleBatch)).Methods("POST")
+	router.HandleFunc("/{event:p|page|i|identify|t|track|a|alias|g|group|screen}",
+		prometheus.InstrumentHandlerFunc("event", s.handleEvent))
 
 	return s
-}
-
-// SegmentMessage fields common to all.
-type SegmentMessage struct {
-	MessageId    string                 `json:"messageId"`
-	Timestamp    time.Time              `json:"timestamp"`
-	SentAt       time.Time              `json:"sentAt,omitempty"`
-	ProjectId    string                 `json:"projectId"`
-	Type         string                 `json:"type"`
-	Context      map[string]interface{} `json:"context,omitempty"` // Duplicate here for batch
-	Properties   map[string]interface{} `json:"properties,omitempty"`
-	Traits       map[string]interface{} `json:"traits,omitempty"`
-	Integrations map[string]interface{} `json:"integrations,omitempty"` // Probably won't use
-	AnonymousId  string                 `json:"anonymousId,omitempty"`
-	UserId       string                 `json:"userId,omitempty"`
-	Event        string                 `json:"event,omitempty"`    // Track only
-	Category     string                 `json:"category,omitempty"` // Page only
-	Name         string                 `json:"name,omitempty"`     // Page only
-}
-
-// SegmentBatch contains batch of messages
-type SegmentBatch struct {
-	MessageId string                 `json:"messageId,omitempty"`
-	Timestamp time.Time              `json:"timestamp,omitempty"`
-	SentAt    time.Time              `json:"sentAt,omitempty"`
-	Context   map[string]interface{} `json:"context,omitempty"`
-	Messages  []SegmentMessage       `json:"batch"`
-}
-
-// SegmentEvent is single message with write key
-type SegmentEvent struct {
-	WriteKey string `json:"writeKey,omitempty"` // Read clear, and set proejctId
-	SegmentMessage
 }
 
 func (s *Segment) handleBatch(w http.ResponseWriter, r *http.Request) {
@@ -119,12 +86,13 @@ func (s *Segment) handleBatch(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 
-	// Write back the metrics
 	fmt.Fprintf(w, `{ "success": true }`)
 }
 
 func (s *Segment) handleEvent(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
+
+	// Support GET method with base64 encoded `data` payload
 	var body io.Reader
 	if r.Method == "GET" {
 		payload := r.FormValue("data")
@@ -139,7 +107,7 @@ func (s *Segment) handleEvent(w http.ResponseWriter, r *http.Request) {
 		body = r.Body
 	}
 
-	// Default segment event with writeKey and event type from path
+	// Default segment event with writeKey and event type from url path
 	writeKey, _, _ := r.BasicAuth()
 	vars := mux.Vars(r)
 	event := SegmentEvent{writeKey, SegmentMessage{Type: vars["event"]}}
@@ -181,12 +149,10 @@ func contextTimeout(r *http.Request) (context.Context, context.CancelFunc) {
 }
 
 func (s *Segment) send(ctx context.Context, m SegmentEvent) error {
-	// Update the timestamp
 	if m.Timestamp == (time.Time{}) {
 		m.Timestamp = time.Now()
 	}
 	m.SentAt = time.Now()
-	// Set unique messageId if none
 	if m.MessageId == "" {
 		m.MessageId = uuid.NewRandom().String()
 	}

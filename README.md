@@ -7,11 +7,12 @@
 Segment is a cloud based analytics platform for tracking events from your application.  
 
 It has a well designed [specific](https://segment.com/docs/spec/) that supports APIs:
-* [Identify](https://segment.com/docs/spec/identify/): who is the customer?
-* [Track](https://segment.com/docs/spec/track/): what are they doing?
 * [Page](https://segment.com/docs/spec/page/): what web page are they on?
-* [Screen](https://segment.com/docs/spec/screen/): what app screen are they on?
+* [Track](https://segment.com/docs/spec/track/): what are they doing?
+* [Identify](https://segment.com/docs/spec/identify/): who is the customer?
 * [Alias](https://segment.com/docs/spec/alias/): what was their past identity?
+* [Group](https://segment.com/docs/spec/group/): what account or organization are they part of?
+* [Screen](https://segment.com/docs/spec/screen/): what app screen are they on?
 
 This go library implements endpoints for all of these APIs.
 
@@ -79,11 +80,20 @@ func main() {
 }
 ```
 
+## Send messages
+
+The segment `Send` method will execute `Send` method on each destination in order, and return on error.  
+It is recommended to implement a queue as per the `Delivery` process, the `Forwarder` should only be used for testing.
+
 ## Background process
 
 The segment `Run` method processes the destinations on seperate go routines, and blocks until the context is done.
 
 The firehose `Delivery` process batches up to 500 messages, sending them at least every 30 seconds to by default.
+
+## Logging
+
+The `Segment` class will log to standard error by default, but can be configured by the `Logger` property.
 
 ## Monitoring
 
