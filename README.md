@@ -80,22 +80,23 @@ func main() {
 }
 ```
 
-## Send messages
+## Implementation Details
+
+### Send messages
 
 The segment `Send` method will execute `Send` method on each destination in order, and return on error.  
 It is recommended to implement a queue as per the `Delivery` process, the `Forwarder` should only be used for testing.
 
-## Background process
+### Background process
 
-The segment `Run` method processes the destinations on seperate go routines, and blocks until the context is done.
+* The segment `Run` method processes the destinations on seperate go routines, and blocks until the context is done.
+* The firehose `Delivery` process batches up to 500 messages, sending them at least every 30 seconds to by default.
 
-The firehose `Delivery` process batches up to 500 messages, sending them at least every 30 seconds to by default.
-
-## Logging
+### Logging
 
 The `Segment` class will log to standard error by default, but can be configured by the `Logger` property.
 
-## Monitoring
+### Monitoring
 
 The [prometheus](https://github.com/prometheus/client_golang) client is enabled to return http and delivery metrics.  
 
