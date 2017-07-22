@@ -25,6 +25,13 @@ func NewForwarder(endpoint string) *Forwarder {
 	}
 }
 
+func (f *Forwarder) WithLogger(logger *log.Logger) Destination {
+	if logger != nil {
+		f.Logger = logger
+	}
+	return f
+}
+
 func (f *Forwarder) Process(ctx context.Context) error {
 	log.Println("Started forwarder")
 	<-ctx.Done() // Block on context, since work is done in Send

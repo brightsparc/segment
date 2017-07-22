@@ -43,6 +43,17 @@ func NewSegment(projectId ProjectId, destinations []Destination, router *mux.Rou
 	return s
 }
 
+// Propogate the logger down to destinations
+func (s *Segment) WithLogger(logger *log.Logger) *Segment {
+	if logger != nil {
+		for _, dest := range s.destinations {
+			dest.WithLogger(logger)
+		}
+		s.Logger = logger
+	}
+	return s
+}
+
 func (s *Segment) handleBatch(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 

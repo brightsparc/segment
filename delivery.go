@@ -101,6 +101,13 @@ func NewDelivery(config *DeliveryConfig) *Delivery {
 	return d
 }
 
+func (d *Delivery) WithLogger(logger *log.Logger) Destination {
+	if logger != nil {
+		d.Logger = logger
+	}
+	return d
+}
+
 // Process is a blocking call
 func (d *Delivery) Process(ctx context.Context) error {
 	log.Printf("Delivery connecting to %s...", d.fh.Endpoint)
@@ -133,6 +140,8 @@ func (d *Delivery) Process(ctx context.Context) error {
 		}
 		resp, err := d.fh.PutRecordBatch(params)
 		if err != nil {
+			deliveryFailureCounter.WithLabelValues(d.streamName).Add(float64(i))
+			d.Logger.Printf("Stream %s error sending %d: %s\n", d.streamName, i, err)
 			return fmt.Errorf("Error sending to firehose -- %v", err)
 		}
 
@@ -171,9 +180,7 @@ func (d *Delivery) Process(ctx context.Context) error {
 		}
 		if i == d.size || flush {
 			// Send and reset index (records will be overwritten)
-			if err := send(i); err != nil {
-				return err
-			}
+			send(i)
 			i = 0
 		}
 	}
