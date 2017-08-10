@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"log"
 	"os"
+	"strings"
 	"time"
 
 	"github.com/aws/aws-sdk-go/aws"
@@ -108,17 +109,38 @@ func (d *Delivery) WithLogger(logger *log.Logger) Destination {
 	return d
 }
 
-// Process is a blocking call
-func (d *Delivery) Process(ctx context.Context) error {
+// Connect connects to firehose and describes or creates stream
+func (d *Delivery) Connect() error {
 	log.Printf("Delivery connecting to %s...", d.fh.Endpoint)
 
-	// Check the stream exists
-	if stream, err := d.fh.DescribeDeliveryStream(&firehose.DescribeDeliveryStreamInput{
+	// Check stream exists
+	stream, err := d.fh.DescribeDeliveryStream(&firehose.DescribeDeliveryStreamInput{
 		DeliveryStreamName: aws.String(d.streamName),
-	}); err != nil {
-		return fmt.Errorf("Firehose stream error -- %v", err)
-	} else {
-		d.Logger.Println("Firehose stream", *stream.DeliveryStreamDescription.DeliveryStreamName)
+	})
+	if err == nil {
+		d.Logger.Printf("Found stream: %s\n", *stream.DeliveryStreamDescription.DeliveryStreamARN)
+		return nil
+	}
+
+	// Create stream if it doesn't exist
+	if strings.Contains(err.Error(), "ResourceNotFoundException") {
+		var create *firehose.CreateDeliveryStreamOutput
+		if create, err = d.fh.CreateDeliveryStream(&firehose.CreateDeliveryStreamInput{
+			DeliveryStreamName: aws.String(d.streamName),
+		}); err == nil {
+			d.Logger.Printf("Created stream: %s\n", *create.DeliveryStreamARN)
+			return nil
+		}
+	}
+
+	return fmt.Errorf("Firehose stream error -- %v", err)
+}
+
+// Process handles the messages
+func (d *Delivery) Process(ctx context.Context) error {
+	// Check the stream exists
+	if err := d.Connect(); err != nil {
+		return err
 	}
 
 	// Create the async channel
@@ -186,6 +208,7 @@ func (d *Delivery) Process(ctx context.Context) error {
 	}
 }
 
+// Send pushes the message onto the queue
 func (d *Delivery) Send(ctx context.Context, message interface{}) error {
 	if d.messages == nil {
 		return fmt.Errorf("Delivery destination not ready, check stream %q exists at %s", d.streamName, d.fh.Endpoint)

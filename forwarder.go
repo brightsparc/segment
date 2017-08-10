@@ -32,14 +32,15 @@ func (f *Forwarder) WithLogger(logger *log.Logger) Destination {
 	return f
 }
 
+// Process is a NOOP
 func (f *Forwarder) Process(ctx context.Context) error {
 	log.Println("Started forwarder")
 	<-ctx.Done() // Block on context, since work is done in Send
 	return nil
 }
 
+// Send forwards the messages to endpoint
 func (f *Forwarder) Send(ctx context.Context, message interface{}) error {
-	// Cast this message to a segment event
 	m, ok := message.(SegmentEvent)
 	if !ok {
 		return fmt.Errorf("Expected Segment Event")

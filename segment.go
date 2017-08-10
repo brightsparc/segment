@@ -10,7 +10,6 @@ import (
 	"log"
 	"net/http"
 	"os"
-	"sync"
 	"time"
 
 	"github.com/gorilla/mux"
@@ -179,22 +178,13 @@ func (s *Segment) send(ctx context.Context, m SegmentEvent) error {
 }
 
 // Run this as go-routine to processes the messages, and optionally send updates
-func (s *Segment) Run(ctx context.Context) <-chan error {
-	done := make(chan error, len(s.destinations))
-
-	var wg sync.WaitGroup
-	wg.Add(len(s.destinations))
+func (s *Segment) Run(ctx context.Context) {
 	for _, dest := range s.destinations {
 		go func(dest Destination) {
-			done <- dest.Process(ctx)
-			wg.Done()
+			// TODO: Add backup and fail fast if we can't process
+			if err := dest.Process(ctx); err != nil {
+				s.Logger.Fatal(err)
+			}
 		}(dest)
 	}
-
-	go func() {
-		wg.Wait()
-		close(done)
-	}()
-
-	return done
 }
