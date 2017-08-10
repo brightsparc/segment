@@ -27,6 +27,7 @@ type Segment struct {
 	projectId    ProjectId
 	destinations []Destination
 	backo        *backo.Backo
+	backoRetry   int
 }
 
 // NewSegment create new segment handler given project and delivery config
@@ -35,7 +36,8 @@ func NewSegment(projectId ProjectId, destinations []Destination, router *mux.Rou
 		Logger:       log.New(os.Stderr, "", log.LstdFlags),
 		projectId:    projectId,
 		destinations: destinations,
-		backo:        backo.DefaultBacko(),
+		backo:        backo.DefaultBacko(), // 100 milliseconds, up to 10 seconds
+		backoRetry:   10,
 	}
 
 	s.Logger.Println("Adding Segment handlers")
@@ -187,7 +189,7 @@ func (s *Segment) Run(ctx context.Context) {
 	for _, dest := range s.destinations {
 		go func(dest Destination) {
 			var err error
-			for i := 0; i < 3; i++ {
+			for i := 0; i < s.backoRetry; i++ {
 				if err = dest.Process(ctx); err == nil {
 					break
 				}
