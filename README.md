@@ -99,7 +99,7 @@ The [prometheus](https://github.com/prometheus/client_golang) client is enabled 
 
 ## Authors
 
-* **Julian Bright** - [brightsparc](https://github.com/brightsparc/)
+* Julian Bright - [brightsparc](https://github.com/brightsparc/)
 
 ## License
 
