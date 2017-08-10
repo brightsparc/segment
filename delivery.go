@@ -30,19 +30,6 @@ var (
 		Help:       "Delivery latency distributions",
 		Objectives: map[float64]float64{0.5: 0.05, 0.9: 0.01, 0.99: 0.001},
 	}, []string{"stream"})
-	updatesSuccessCounter = prometheus.NewCounterVec(prometheus.CounterOpts{
-		Name: "updates_success_total",
-		Help: "Updates success total",
-	}, []string{"stream"})
-	updatesBlockedCounter = prometheus.NewCounterVec(prometheus.CounterOpts{
-		Name: "updates_blocked_total",
-		Help: "Updates blocked total",
-	}, []string{"stream"})
-	updatesLatency = prometheus.NewSummaryVec(prometheus.SummaryOpts{
-		Name:       "updates_latency_seconds",
-		Help:       "Updates latency distributions",
-		Objectives: map[float64]float64{0.5: 0.05, 0.9: 0.01, 0.99: 0.001},
-	}, []string{"stream"})
 )
 
 func init() {
@@ -50,9 +37,6 @@ func init() {
 	prometheus.MustRegister(deliverySuccessCounter)
 	prometheus.MustRegister(deliveryFailureCounter)
 	prometheus.MustRegister(deliveryLatency)
-	prometheus.MustRegister(updatesSuccessCounter)
-	prometheus.MustRegister(updatesBlockedCounter)
-	prometheus.MustRegister(updatesLatency)
 }
 
 // DeliveryConfig contains configuration parameters including optional endpint
@@ -176,7 +160,7 @@ func (d *Delivery) Process(ctx context.Context) error {
 		return nil
 	}
 
-	d.Logger.Println("Starting processing")
+	d.Logger.Println("Starting delivery processing")
 	i := 0
 	for {
 		flush := false
@@ -192,7 +176,7 @@ func (d *Delivery) Process(ctx context.Context) error {
 			}
 		case <-ctx.Done():
 			// Sending remaining and return
-			d.Logger.Println("Ending processing")
+			d.Logger.Println("Ending delivery processing")
 			return send(i)
 		case <-time.After(d.flushInterval):
 			if i > 0 {
