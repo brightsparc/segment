@@ -63,7 +63,7 @@ func main() {
 		segment.NewForwarder("https://api.segment.io/v1/batch"),
 		segment.NewDelivery(&segment.DeliveryConfig{
 			StreamRegion: "us-west-2",
-			StreamName:   "stream-name", // Must exist
+			StreamName:   "stream-name", // Will attempt to create if not exists
 		}),
 	}
 
@@ -86,8 +86,8 @@ The segment `Send` method will execute `Send` method on each destination in orde
 
 ### Background process
 
-* The segment `Run` method processes destinations on seperate go routines, blocking until the context is done.
-* The firehose `Delivery` process batches up to 500 messages, sending them at every 30 seconds by default.
+* The segment `Run` method processes destinations on separate go routines, and accepts a context to cancel the process.
+* The `Delivery` process attempts to connect to a region + stream, and optionally accepts an endpoint for testing.  It requires `AWS` credentials to be set, and exit after 3 failed attempts.  Batches of up to 500 messages at send every 30 seconds by default.
 
 ### Logging
 
