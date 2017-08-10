@@ -14,15 +14,19 @@ import (
 
 	"github.com/gorilla/mux"
 	"github.com/prometheus/client_golang/prometheus"
+	"github.com/segmentio/backo-go"
 	"github.com/xtgo/uuid"
 )
 
+// ProjectId is the func definition to return string based on writeKey
 type ProjectId func(writeKey string) string
 
+// Segment is intialized with proejctId and destinations
 type Segment struct {
 	Logger       *log.Logger
 	projectId    ProjectId
 	destinations []Destination
+	backo        *backo.Backo
 }
 
 // NewSegment create new segment handler given project and delivery config
@@ -31,6 +35,7 @@ func NewSegment(projectId ProjectId, destinations []Destination, router *mux.Rou
 		Logger:       log.New(os.Stderr, "", log.LstdFlags),
 		projectId:    projectId,
 		destinations: destinations,
+		backo:        backo.DefaultBacko(),
 	}
 
 	s.Logger.Println("Adding Segment handlers")
@@ -42,7 +47,7 @@ func NewSegment(projectId ProjectId, destinations []Destination, router *mux.Rou
 	return s
 }
 
-// Propogate the logger down to destinations
+// WithLogger propogates the logger down to destinations
 func (s *Segment) WithLogger(logger *log.Logger) *Segment {
 	if logger != nil {
 		for _, dest := range s.destinations {
@@ -181,8 +186,16 @@ func (s *Segment) send(ctx context.Context, m SegmentEvent) error {
 func (s *Segment) Run(ctx context.Context) {
 	for _, dest := range s.destinations {
 		go func(dest Destination) {
-			// TODO: Add backup and fail fast if we can't process
-			if err := dest.Process(ctx); err != nil {
+			var err error
+			for i := 0; i < 3; i++ {
+				if err = dest.Process(ctx); err == nil {
+					break
+				}
+				s.Logger.Printf("Process retrying in %s due to error: %v\n", s.backo.Duration(i), err)
+				s.backo.Sleep(i)
+			}
+			// Quit if still error after 3 retries
+			if err != nil {
 				s.Logger.Fatal(err)
 			}
 		}(dest)

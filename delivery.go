@@ -48,6 +48,7 @@ type DeliveryConfig struct {
 	FlushInterval  time.Duration `json:"flushInterval,omitempty"`
 }
 
+// Delivery is destination for AWS firehose
 type Delivery struct {
 	Logger        *log.Logger // Public logger that caller can override
 	fh            *firehose.Firehose
@@ -86,6 +87,7 @@ func NewDelivery(config *DeliveryConfig) *Delivery {
 	return d
 }
 
+// WithLogger adds optional logging
 func (d *Delivery) WithLogger(logger *log.Logger) Destination {
 	if logger != nil {
 		d.Logger = logger
