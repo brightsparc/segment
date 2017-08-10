@@ -86,7 +86,7 @@ The segment `Send` method will execute `Send` method on each destination in orde
 
 ### Background process
 
-* The segment `Run` method launches a go-routine for each destination, and accepts a context to cancel these processes.
+* The segment `Run` method launches a go-routine for each destination, accepts a context to end these processes.
 * The `Delivery` process attempts to connect to a region + stream, and optionally accepts an endpoint for testing.  It requires `AWS` credentials to be set, and exit after 3 failed attempts.  Batches of up to 500 messages at send every 30 seconds by default.
 
 ### Logging
