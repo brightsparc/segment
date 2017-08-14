@@ -72,7 +72,7 @@ func (f *Forwarder) WithLogger(logger *log.Logger) Destination {
 	return f
 }
 
-// Process is a NOOP
+// Process forwards messages
 func (f *Forwarder) Process(ctx context.Context) error {
 	log.Println("Started forwarder processing")
 
@@ -96,13 +96,12 @@ func (f *Forwarder) Process(ctx context.Context) error {
 	}
 }
 
-// Send forwards the messages to endpoint
+// Send pushes messages onto queue
 func (f *Forwarder) Send(ctx context.Context, message interface{}) error {
 	select {
 	case f.messages <- message:
 	default:
 		forwarderSkipCounter.WithLabelValues(f.endpoint).Add(float64(1))
-		f.Logger.Println("Forwarder skipped")
 	}
 	return nil
 }
