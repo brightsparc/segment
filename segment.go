@@ -13,7 +13,6 @@ import (
 	"time"
 
 	"github.com/gorilla/mux"
-	"github.com/prometheus/client_golang/prometheus"
 	"github.com/segmentio/backo-go"
 	"github.com/xtgo/uuid"
 )
@@ -41,10 +40,8 @@ func NewSegment(projectId ProjectId, destinations []Destination, router *mux.Rou
 	}
 
 	s.Logger.Println("Adding Segment handlers")
-	router.HandleFunc("/batch",
-		prometheus.InstrumentHandlerFunc("batch", s.handleBatch)).Methods("POST")
-	router.HandleFunc("/{event:p|page|i|identify|t|track|a|alias|g|group|screen}",
-		prometheus.InstrumentHandlerFunc("event", s.handleEvent))
+	router.HandleFunc("/batch", s.handleBatch).Methods("POST")
+	router.HandleFunc("/{event:p|page|i|identify|t|track|a|alias|g|group|screen}", s.handleEvent)
 
 	return s
 }
